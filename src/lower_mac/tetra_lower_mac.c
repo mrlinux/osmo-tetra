@@ -25,7 +25,7 @@
 
 #include <osmocom/core/utils.h>
 #include <osmocom/core/msgb.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 
 #include <tetra_common.h>
 #include <tetra_tdma.h>

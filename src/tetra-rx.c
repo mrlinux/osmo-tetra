@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 
 #include <osmocom/core/utils.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 
 #include "tetra_common.h"
 #include <phy/tetra_burst.h>

@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include <osmocom/core/msgb.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 #include <osmocom/core/bits.h>
 
 #include "tetra_llc_pdu.h"
