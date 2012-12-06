@@ -1,13 +1,13 @@
 /*
  * Textbook implementation of a PI/4 DQPSK modulator for TETRA
  *
- * USRP is set to 50k below TX frequency and a prerotated signal is
+ * USRP is set to TXBW/4 below TX frequency and a prerotated signal is
  * transmitted. This moves the I/Q imbalance out of the main signal.
  * Please beware: I/Q imbalance is still there and can contain
  * considerable energy - most probably somewhere, where you do not want
  * to get caught transmitting.
  *
- * USRP is running at 250kSamples/s and the modulator produces 14 samples
+ * USRP is running at minimum TX rate and the modulator produces 14 samples
  * per symbol. This results in 17857 symbols/s -- which is not 18000 as
  * required by TETRA. If this doesn't work with actual hardware, I will
  * add a fractional resampler
@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <usrp/usrp_bytesex.h>
+#include <fstream>
 #include "modulator.h"
 
 // possible constellation values (QPSK and QPSK+PI/4 interleaved)
@@ -78,11 +78,21 @@ const uint8_t Modulator::m_transitions[8][4] = {
 
 void Modulator::getNextBurst()
 {
+#if 1
 	// read data for next burst
 	int res = read(STDIN_FILENO, m_burst, BurstSymbols);
 	if(res != BurstSymbols) {
 		memset(m_burst, 0xff, BurstSymbols);
 	}
+#else // simulate bursts
+	for (int i = 0; i < 255;)
+	{
+		int j = 0;
+		for (; j <= 3; j++ )
+			m_burst[i + j] = rand() % 3 + 1;
+		i += j;
+	}
+#endif
 }
 
 uint8_t Modulator::getNextSymbol()
@@ -121,7 +131,7 @@ Complex Modulator::getNextSample()
 	if(m_symbolSampleNum >= 14)
 		m_symbolSampleNum = 0;
 
-	// frequency shift by 50kHz
+	// frequency shift
 	sample *= m_carrier.nextIQ();
 
 	return sample;
@@ -139,56 +149,55 @@ Complex Modulator::getNextSample()
 Modulator::Modulator(float freq) :
 	m_burstIndex(-1),
 	m_currentConstellation(0),
-	m_symbolSampleNum(0),
-	m_sampleNum(0)
+	m_symbolSampleNum(0)
 {
+	srand ( time(NULL) );
+
 	// RRC as pulse shaper
 	m_rrcf.init(9.0f, 14.0f, 1.0f, 0.35f, 11 * 14 + 1);
-	// 50kHz offset - USRP gets set to 50k below the wanted frequency
-	m_carrier.setFreq(50000.0f, 250000.0f);
 
-	// configure USRP to 250kSamples/s
-	m_usrpTX = usrp_standard_tx::make(0, 512, 1, -1, 1024, 4);
+	// create USRP object
+	uhd::device_addr_t addr("");
+	m_usrpTX = uhd::usrp::multi_usrp::make(addr);
 	if(m_usrpTX == NULL) {
 		fprintf(stderr, "USRP error\n");
 		return;
 	}
-	usrp_subdev_spec txSpec(0, 0);
-	m_txBoard = m_usrpTX->selected_subdev(txSpec);
+
+	// select lowest possible rate
+	uhd::meta_range_t tx_rates = m_usrpTX->get_tx_rates();
+	double lowest_possible_rate = tx_rates.start();
+	m_usrpTX->set_tx_rate(lowest_possible_rate);
+	double tx_rate = m_usrpTX->get_tx_rate();
+	std::cout << "Selected TX rate: " << tx_rate << std::endl;
+
+	// USRP gets set by TXBW/4 below the requested frequency
+	const float carrier_offset = tx_rate / 4.0;
+
+	m_carrier.setFreq(carrier_offset, tx_rate);
+
+	uhd::usrp::subdev_spec_t subdev_spec("A:0");
+	m_usrpTX->set_tx_subdev_spec(subdev_spec);
 
 	// tune the monster
-	usrp_tune_result txTuneResult;
-	if(!m_usrpTX->tune(m_txBoard->which(), m_txBoard, freq - 50000.0f, &txTuneResult)) {
-		fprintf(stderr, "USRP boom!\n");
-		return;
-	}
-	fprintf(stderr, "Tune result: %f MHz, (BB: %f MHz, DXC: %f MHz, residual: %f MHz\n",
-		freq - 50000.0f,
-		txTuneResult.baseband_freq,
-		txTuneResult.dxc_freq,
-		txTuneResult.residual_freq);
+	uhd::tune_request_t tune_req(freq - carrier_offset, carrier_offset);
+	uhd::tune_result_t tune_res = m_usrpTX->set_tx_freq(tune_req);
+	fprintf(stderr, "%s\n", tune_res.to_pp_string().c_str());
 
-	// configure signal routing
-	m_usrpTX->set_mux(m_usrpTX->determine_tx_mux_value(txSpec));
-	m_txBoard->set_gain(m_txBoard->gain_max());
-	m_txBoard->set_auto_tr(true);
-	m_txBoard->set_atr_tx_delay(0);
-	m_txBoard->set_atr_rx_delay(50);
+	// set highest possible gain value
+	uhd::meta_range_t tx_gains = m_usrpTX->get_tx_gain_range();
+	double highest_possible_gain = tx_gains.stop();
+	m_usrpTX->set_tx_gain(highest_possible_gain);
+	double tx_gain = m_usrpTX->get_tx_gain();
+	std::cout << "Selected TX gain: " << tx_gain << std::endl;
 
-	// I/Q calibration...
-//	m_usrpTX->set_dac_offset(0, 51, 0);
-//	m_usrpTX->set_dac_offset(1, 59, 0);
+	//create a transmit streamer
+	uhd::stream_args_t stream_args("fc32"); // complex floats
+	m_tx_stream = m_usrpTX->get_tx_stream(stream_args);
 
-	// alloc space for samples
-	m_txBlockSize = m_usrpTX->block_size();
-	m_txBlock = new uint8_t[m_txBlockSize];
-	m_txBlockFill = 0;
-	m_txStarted = false;
-
-	fprintf(stderr, "USRP TX block size: %d Bytes, Fs = %ld (I/Q %s)\n",
-		m_usrpTX->block_size(),
-		m_usrpTX->converter_rate(),
-		m_txBoard->i_and_q_swapped() ? "swapped" : "normal");
+	fprintf(stderr, "USRP TX block size: %d Bytes, Fs = %f\n",
+		int(m_tx_stream->get_max_num_samps()),
+		m_usrpTX->get_tx_rate());
 }
 
 void Modulator::run()
@@ -201,42 +210,45 @@ void Modulator::run()
 	if(m_usrpTX == NULL)
 		return;
 
+	int txBlockFill = 0;
+	int txBlockSize = m_tx_stream->get_max_num_samps() / (2 * sizeof(float));
+	std::vector< Complex > buff(txBlockSize, Complex(0, 0));
+
+	uhd::tx_metadata_t md;
+	md.start_of_burst = false;
+	md.end_of_burst = false;
+
 	// get the time for sample rate measurement
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	start = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 	blocks = 0;
 
 	while(true) {
-		Complex sample = getNextSample();
+		buff[txBlockFill++] = getNextSample();
 
-		((short*)(m_txBlock + m_txBlockFill))[0] = host_to_usrp_short(sample.real() * 30000.0 + 0.5);
-		((short*)(m_txBlock + m_txBlockFill))[1] = host_to_usrp_short(sample.imag() * 30000.0 + 0.5);
-
-		m_txBlockFill += 2 * sizeof(short);
-
-		if(m_txBlockFill >= m_txBlockSize) {
+		if(txBlockFill >= txBlockSize) {
+#if 0
+			std::ofstream stream;
+			stream.open("/tmp/tetramod.cfile", std::ios::out | std::ios::app);
+			stream.write((const char *)buff.data(), txBlockFill * 2 * sizeof(float));
+			stream.close();
+#endif
 			// a complete block is full -> send it to USRP
-			bool underflow = false;
-			if(!m_txStarted) {
-				m_usrpTX->start();
-				m_txStarted = true;
-			}
-			m_usrpTX->write(m_txBlock, m_txBlockFill, &underflow);
+			m_tx_stream->send(&buff.front(), txBlockFill, md);
 			blocks++;
-			m_txBlockFill = 0;
-			if(underflow)
-				fprintf(stderr, "underflow TX\n");
+			txBlockFill = 0;
 
 			// calculate sample rate
 			clock_gettime(CLOCK_MONOTONIC, &ts);
 			now = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 			if(now - start >= 1000) {
-				fprintf(stderr, "TX: Rate: %f samples/sec\n", (blocks * m_txBlockSize) / (2 * sizeof(short) * ((now - start) / 1000.0)));
+				fprintf(stderr, "\rTX Rate: %f samples/sec ",
+					(blocks * txBlockSize) /
+					((now - start) / 1000.0));
+				fflush(stderr);
 				start = now;
 				blocks = 0;
 			}
-
 		}
 	}
-
 }

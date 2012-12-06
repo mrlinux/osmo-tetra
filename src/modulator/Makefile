@@ -1,5 +1,5 @@
 TARGET=tetramod
- 
+
 DEBUG=n
 CXX_SOURCES=\
 	main.cpp \
@@ -7,9 +7,8 @@ CXX_SOURCES=\
 	rootraisedcosinefilter.cpp \
 	nco.cpp
 
-CXXFLAGS=-std=gnu++0x -I. -I/usr/local/include/gnuradio
-LDFLAGS=-L/usr/local/lib
-LIBS=-lm -lusrp
+CXXFLAGS=-std=gnu++0x -I. `pkg-config --cflags uhd`
+LIBS=-lm `pkg-config --libs uhd`
 
 DEPDIR=./deps
 

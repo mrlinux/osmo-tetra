@@ -2,7 +2,7 @@
 #define INCLUDE_MODULATOR_H
 
 #include <stdint.h>
-#include <usrp/usrp_standard.h>
+#include <uhd/usrp/multi_usrp.hpp>
 #include "nco.h"
 #include "rootraisedcosinefilter.h"
 
@@ -12,15 +12,11 @@ private:
 	static const uint8_t m_transitions[8][4];
 
 	enum {
-		BurstSymbols = 255,
+		BurstSymbols = 255
 	};
 
-	usrp_standard_tx_sptr m_usrpTX;
-	db_base_sptr m_txBoard;
-	int m_txBlockSize;
-	uint8_t* m_txBlock;
-	int m_txBlockFill;
-	bool m_txStarted;
+	uhd::usrp::multi_usrp::sptr m_usrpTX;
+	uhd::tx_streamer::sptr m_tx_stream;
 
 	uint8_t m_burst[BurstSymbols];
 	int m_burstIndex;
@@ -30,7 +26,6 @@ private:
 
 	int m_currentConstellation;
 	int m_symbolSampleNum;
-	int m_sampleNum;
 
 	void getNextBurst();
 	uint8_t getNextSymbol();
