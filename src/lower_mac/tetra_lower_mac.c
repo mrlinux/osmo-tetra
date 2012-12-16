@@ -184,6 +184,16 @@ void tp_sap_udata_ind(enum tp_sap_data_type type, const uint8_t *bits, unsigned 
 	DEBUGP("%s %s type4: %s\n", tbp->name, time_str,
 		osmo_ubit_dump(type4, tbp->type345_bits));
 
+	/* Save traffic data */
+	if ((type == TPSAP_T_SCH_F) && (tms->cur_burst.dl_usage))
+	{
+		if (tms->traffic_cb) {
+			tms->traffic_cb(type4, 432, tcd->time.tn,
+					tms->cur_burst.dl_usage,
+					tms->cur_burst.ssi, tms->ctx);
+		}
+	}
+
 	if (tbp->interleave_a) {
 		/* Run block deinterleaving: type-3 bits */
 		block_deinterleave(tbp->type345_bits, tbp->interleave_a, type4, type3);
@@ -260,5 +270,6 @@ void tp_sap_udata_ind(enum tp_sap_data_type type, const uint8_t *bits, unsigned 
 
 	upper_mac_prim_recv(&ttp->oph, tms);
 }
+
 
 

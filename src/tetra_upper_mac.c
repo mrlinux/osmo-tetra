@@ -180,6 +180,8 @@ static void rx_resrc(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms
 		rx_tm_sdu(tms, msg, len_bits);
 	}
 
+	tms->cur_burst.ssi = rsd.addr.ssi;
+
 out:
 	printf("\n");
 }
@@ -240,9 +242,9 @@ static void rx_aach(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms)
 
 	/* save the state whether the current burst is traffic or not */
 	if (aad.dl_usage > 3)
-		tms->cur_burst.is_traffic = 1;
+		tms->cur_burst.dl_usage = aad.dl_usage;
 	else
-		tms->cur_burst.is_traffic = 0;
+		tms->cur_burst.dl_usage = 0;
 
 	printf("\n");
 }

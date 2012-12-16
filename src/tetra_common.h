@@ -42,12 +42,20 @@ struct tetra_phy_state {
 };
 extern struct tetra_phy_state t_phy_state;
 
+typedef void(*tetra_mac_traffic_cb_t)(const uint8_t *bits, unsigned int len,
+				      uint32_t tn, uint32_t dl_usage, uint32_t ssi,
+				      void *ctx);
+
 struct tetra_mac_state {
 	struct llist_head voice_channels;
 	struct {
-		int is_traffic;
+		uint32_t dl_usage;
+		uint32_t ssi;
 	} cur_burst;
-    struct tetra_si_decoded last_sid;
+	struct tetra_si_decoded last_sid;
+
+	void *ctx;
+	tetra_mac_traffic_cb_t traffic_cb;
 };
 
 void tetra_mac_state_init(struct tetra_mac_state *tms);

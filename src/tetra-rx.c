@@ -34,7 +34,39 @@
 #include <phy/tetra_burst_sync.h>
 #include "tetra_gsmtap.h"
 
+#ifdef HAVE_TETRA_CODEC
+#include <osmocom/tetra/codec_acelp.h>
+#endif
+
 void *tetra_tall_ctx;
+
+#ifdef HAVE_TETRA_CODEC
+void tetra_mac_traffic_cb(const uint8_t *bits, unsigned int len,
+			  uint32_t tn, uint32_t dl_usage, uint32_t ssi,
+			  void *ctx)
+{
+	char fname[100];
+	int16_t block[432];
+	int16_t voice[480];
+	FILE *file;
+	int i;
+
+	/* Open target file */
+	snprintf(fname, 100, "/tmp/traffic_%d.pcm", dl_usage);
+	file = fopen(fname, "ab");
+
+	for (i=0; i<432; i++)
+		block[i] = bits[i] ? -127 : 127;
+
+	tetra_acelp_decode_frame(block, voice);
+
+	/* Write it */
+	fwrite(voice, sizeof(int16_t), 480, file);
+
+	/* Close */
+	fclose(file);
+}
+#endif
 
 int main(int argc, char **argv)
 {
@@ -60,7 +92,11 @@ int main(int argc, char **argv)
 
 	trs = talloc_zero(tetra_tall_ctx, struct tetra_rx_state);
 	trs->burst_cb_priv = tms;
+#ifdef HAVE_TETRA_CODEC
+	tetra_acelp_decode_init();
 
+	tms->traffic_cb = tetra_mac_traffic_cb;
+#endif
 	while (1) {
 		uint8_t buf[64];
 		int len;
