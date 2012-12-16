@@ -18,9 +18,15 @@
 ########################################################################
 # Setup library
 ########################################################################
-add_library(osmotetra SHARED
+
+add_library(osmotetra-phy STATIC
     phy/tetra_burst_sync.c
     phy/tetra_burst.c
+)
+
+set_target_properties(osmotetra-phy PROPERTIES COMPILE_FLAGS "-fPIC")
+
+add_library(osmotetra-mac STATIC
     lower_mac/tetra_conv_enc.c
     lower_mac/tch_reordering.c
     lower_mac/tetra_scramb.c
@@ -43,8 +49,15 @@ add_library(osmotetra SHARED
     tetra_sndcp_pdu.c
     tetra_gsmtap.c
     tuntap.c
+)
+
+add_library(osmotetra SHARED
     libtetra.c
 )
+
+set_target_properties(osmotetra-mac PROPERTIES COMPILE_FLAGS "-fPIC")
+
+target_link_libraries(osmotetra osmotetra-phy osmotetra-mac)
 
 target_link_libraries(osmotetra ${LIBOSMOCORE_LIBRARIES})
 if(LIBTETRACODEC_FOUND)
@@ -59,9 +72,9 @@ set_target_properties(osmotetra PROPERTIES SOVERSION 0 VERSION 0.0.0)
 # Build utility
 ########################################################################
 add_executable(crc_test crc_test.c)
-target_link_libraries(crc_test osmotetra)
+target_link_libraries(crc_test osmotetra-mac ${LIBOSMOCORE_LIBRARIES})
 add_executable(conv_enc_test conv_enc_test.c testpdu.c)
-target_link_libraries(conv_enc_test osmotetra)
+target_link_libraries(conv_enc_test osmotetra-phy osmotetra-mac ${LIBOSMOCORE_LIBRARIES})
 add_executable(tunctl tunctl.c)
 
 add_executable(float_to_bits float_to_bits.c)
