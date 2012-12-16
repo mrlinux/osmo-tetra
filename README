@@ -14,6 +14,15 @@ with this program.
 
 You will need libosmocore (http://bb.osmocom.org/trac/wiki/libosmocore) to link.
 
+== Build instructions ==
+
+mkdir build
+cd build
+cmake ../
+make
+make install
+ldconfig
+
 
 == Demodulator ==
 

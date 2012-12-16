@@ -97,7 +97,7 @@ const char *tetra_alloc_dump(const struct tetra_chan_alloc_decoded *cad, struct 
 }
 
 /* Receive TL-SDU (LLC SDU == MLE PDU) */
-static int rx_tl_sdu(struct tetra_mac_state *tms, struct msgb *msg, unsigned int len)
+/* FIXME: static */ int rx_tl_sdu(struct tetra_mac_state *tms, struct msgb *msg, unsigned int len)
 {
 	uint8_t *bits = msg->l3h;
 	uint8_t mle_pdisc = bits_to_uint(bits, 3);
