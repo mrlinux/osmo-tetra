@@ -63,7 +63,7 @@ static void switch_rx_state(struct tetra_rx_state *trs, enum rx_state new_state)
 
 void tetra_rx_state_init(struct tetra_rx_state *trs)
 {
-	memset(trs, 0, sizeof(trs));
+	memset(trs, 0, sizeof(struct tetra_rx_state));
 }
 
 /* input a raw bitstream into the tetra burst synchronizaer */
