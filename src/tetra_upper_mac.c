@@ -60,15 +60,15 @@ static void rx_bcast(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms
 				      sid.duplex_spacing,
 				      sid.reverse_operation);
 
-	printf("BNCH SYSINFO (DL %u Hz, UL %u Hz), service_details 0x%04x ",
+	DEBUGP("BNCH SYSINFO (DL %u Hz, UL %u Hz), service_details 0x%04x ",
 		dl_freq, ul_freq, sid.mle_si.bs_service_details);
 	if (sid.cck_valid_no_hf)
-		printf("CCK ID %u", sid.cck_id);
+		DEBUGP("CCK ID %u", sid.cck_id);
 	else
-		printf("Hyperframe %u", sid.hyperframe_number);
-	printf("\n");
+		DEBUGP("Hyperframe %u", sid.hyperframe_number);
+	DEBUGP("\n");
 	for (i = 0; i < 12; i++)
-		printf("\t%s: %u\n", tetra_get_bs_serv_det_name(1 << i),
+		DEBUGP("\t%s: %u\n", tetra_get_bs_serv_det_name(1 << i),
 			sid.mle_si.bs_service_details & (1 << i) ? 1 : 0);
 
 	memcpy(&tms->last_sid, &sid, sizeof(sid));
@@ -102,29 +102,29 @@ const char *tetra_alloc_dump(const struct tetra_chan_alloc_decoded *cad, struct 
 	uint8_t *bits = msg->l3h;
 	uint8_t mle_pdisc = bits_to_uint(bits, 3);
 
-	printf("TL-SDU(%s): %s", tetra_get_mle_pdisc_name(mle_pdisc),
+	DEBUGP("TL-SDU(%s): %s", tetra_get_mle_pdisc_name(mle_pdisc),
 		osmo_ubit_dump(bits, len));
 	switch (mle_pdisc) {
 	case TMLE_PDISC_MM:
-		printf(" %s", tetra_get_mm_pdut_name(bits_to_uint(bits+3, 4), 0));
+		DEBUGP(" %s", tetra_get_mm_pdut_name(bits_to_uint(bits+3, 4), 0));
 		break;
 	case TMLE_PDISC_CMCE:
-		printf(" %s", tetra_get_cmce_pdut_name(bits_to_uint(bits+3, 5), 0));
+		DEBUGP(" %s", tetra_get_cmce_pdut_name(bits_to_uint(bits+3, 5), 0));
 		break;
 	case TMLE_PDISC_SNDCP:
-		printf(" %s", tetra_get_sndcp_pdut_name(bits_to_uint(bits+3, 4), 0));
-		printf(" NSAPI=%u PCOMP=%u, DCOMP=%u",
+		DEBUGP(" %s", tetra_get_sndcp_pdut_name(bits_to_uint(bits+3, 4), 0));
+		DEBUGP(" NSAPI=%u PCOMP=%u, DCOMP=%u",
 			bits_to_uint(bits+3+4, 4),
 			bits_to_uint(bits+3+4+4, 4),
 			bits_to_uint(bits+3+4+4+4, 4));
-		printf(" V%u, IHL=%u",
+		DEBUGP(" V%u, IHL=%u",
 			bits_to_uint(bits+3+4+4+4+4, 4),
 			4*bits_to_uint(bits+3+4+4+4+4+4, 4));
-		printf(" Proto=%u",
+		DEBUGP(" Proto=%u",
 			bits_to_uint(bits+3+4+4+4+4+4+4+64, 8));
 		break;
 	case TMLE_PDISC_MLE:
-		printf(" %s", tetra_get_mle_pdut_name(bits_to_uint(bits+3, 3), 0));
+		DEBUGP(" %s", tetra_get_mle_pdut_name(bits_to_uint(bits+3, 3), 0));
 		break;
 	default:
 		break;
@@ -140,7 +140,7 @@ static int rx_tm_sdu(struct tetra_mac_state *tms, struct msgb *msg, unsigned int
 	memset(&lpp, 0, sizeof(lpp));
 	tetra_llc_pdu_parse(&lpp, bits, len);
 
-	printf("TM-SDU(%s,%u,%u): ",
+	DEBUGP("TM-SDU(%s,%u,%u): ",
 		tetra_get_llc_pdut_dec_name(lpp.pdu_type), lpp.ns, lpp.ss);
 	if (lpp.tl_sdu && lpp.ss == 0) {
 		msg->l3h = lpp.tl_sdu;
@@ -159,7 +159,7 @@ static void rx_resrc(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms
 	tmpdu_offset = macpdu_decode_resource(&rsd, msg->l1h);
 	msg->l2h = msg->l1h + tmpdu_offset;
 
-	printf("RESOURCE Encr=%u, Length=%d Addr=%s ",
+	DEBUGP("RESOURCE Encr=%u, Length=%d Addr=%s ",
 		rsd.encryption_mode, rsd.macpdu_length,
 		tetra_addr_dump(&rsd.addr));
 
@@ -167,10 +167,10 @@ static void rx_resrc(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms
 		goto out;
 
 	if (rsd.chan_alloc_pres)
-		printf("ChanAlloc=%s ", tetra_alloc_dump(&rsd.cad, tms));
+		DEBUGP("ChanAlloc=%s ", tetra_alloc_dump(&rsd.cad, tms));
 
 	if (rsd.slot_granting.pres)
-		printf("SlotGrant=%u/%u ", rsd.slot_granting.nr_slots,
+		DEBUGP("SlotGrant=%u/%u ", rsd.slot_granting.nr_slots,
 			rsd.slot_granting.delay);
 
 	if (rsd.macpdu_length > 0 && rsd.encryption_mode == 0) {
@@ -183,7 +183,7 @@ static void rx_resrc(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms
 	tms->cur_burst.ssi = rsd.addr.ssi;
 
 out:
-	printf("\n");
+	DEBUGP("\n");
 }
 
 static void rx_suppl(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms)
@@ -206,18 +206,18 @@ static void rx_suppl(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms
 	}
 #endif
 
-	printf("SUPPLEMENTARY MAC-D-BLOCK ");
+	DEBUGP("SUPPLEMENTARY MAC-D-BLOCK ");
 
 	//if (sud.encryption_mode == 0)
 		msg->l2h = msg->l1h + tmpdu_offset;
 		rx_tm_sdu(tms, msg, 100);
 
-	printf("\n");
+	DEBUGP("\n");
 }
 
 static void dump_access(struct tetra_access_field *acc, unsigned int num)
 {
-	printf("ACCESS%u: %c/%u ", num, 'A'+acc->access_code, acc->base_frame_len);
+	DEBUGP("ACCESS%u: %c/%u ", num, 'A'+acc->access_code, acc->base_frame_len);
 }
 
 static void rx_aach(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms)
@@ -225,7 +225,7 @@ static void rx_aach(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms)
 	struct tmv_unitdata_param *tup = &tmvp->u.unitdata;
 	struct tetra_acc_ass_decoded aad;
 
-	printf("ACCESS-ASSIGN PDU: ");
+	DEBUGP("ACCESS-ASSIGN PDU: ");
 
 	memset(&aad, 0, sizeof(aad));
 	macpdu_decode_access_assign(&aad, tmvp->oph.msg->l1h,
@@ -236,9 +236,9 @@ static void rx_aach(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms)
 	if (aad.pres & TETRA_ACC_ASS_PRES_ACCESS2)
 		dump_access(&aad.access[1], 2);
 	if (aad.pres & TETRA_ACC_ASS_PRES_DL_USAGE)
-		printf("DL_USAGE: %s ", tetra_get_dl_usage_name(aad.dl_usage));
+		DEBUGP("DL_USAGE: %s ", tetra_get_dl_usage_name(aad.dl_usage));
 	if (aad.pres & TETRA_ACC_ASS_PRES_UL_USAGE)
-		printf("UL_USAGE: %s ", tetra_get_ul_usage_name(aad.ul_usage));
+		DEBUGP("UL_USAGE: %s ", tetra_get_ul_usage_name(aad.ul_usage));
 
 	/* save the state whether the current burst is traffic or not */
 	if (aad.dl_usage > 3)
@@ -246,7 +246,7 @@ static void rx_aach(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms)
 	else
 		tms->cur_burst.dl_usage = 0;
 
-	printf("\n");
+	DEBUGP("\n");
 }
 
 static int rx_tmv_unitdata_ind(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms)
@@ -266,7 +266,7 @@ static int rx_tmv_unitdata_ind(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_
 		pdu_name = tetra_get_macpdu_name(pdu_type);
 	}
 
-	printf("TMV-UNITDATA.ind %s %s CRC=%u %s\n",
+	DEBUGP("TMV-UNITDATA.ind %s %s CRC=%u %s\n",
 		tetra_tdma_time_dump(&tup->tdma_time),
 		tetra_get_lchan_name(tup->lchan),
 		tup->crc_ok, pdu_name);
@@ -300,22 +300,22 @@ static int rx_tmv_unitdata_ind(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_
 			break;
 		case TETRA_PDU_T_MAC_FRAG_END:
 			if (msg->l1h[3] == TETRA_MAC_FRAGE_FRAG) {
-				printf("FRAG/END FRAG: ");
+				DEBUGP("FRAG/END FRAG: ");
 				msg->l2h = msg->l1h+4;
 				rx_tm_sdu(tms, msg, 100 /*FIXME*/);
-				printf("\n");
+				DEBUGP("\n");
 			} else
-				printf("FRAG/END END\n");
+				DEBUGP("FRAG/END END\n");
 			break;
 		default:
-			printf("STRANGE pdu=%u\n", pdu_type);
+			DEBUGP("STRANGE pdu=%u\n", pdu_type);
 			break;
 		}
 		break;
 	case TETRA_LC_BSCH:
 		break;
 	default:
-		printf("STRANGE lchan=%u\n", tup->lchan);
+		DEBUGP("STRANGE lchan=%u\n", tup->lchan);
 		break;
 	}
 
@@ -334,7 +334,7 @@ int upper_mac_prim_recv(struct osmo_prim_hdr *op, void *priv)
 		rc = rx_tmv_unitdata_ind(tmvp, tms);
 		break;
 	default:
-		printf("primitive on unknown sap\n");
+		DEBUGP("primitive on unknown sap\n");
 		break;
 	}
 

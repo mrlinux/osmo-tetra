@@ -114,9 +114,9 @@ int main(int argc, char **argv)
 			break;
 		rc = process_sym_fl(fl);
 		sym_int2bits(rc, bits);
-		//printf("%2d %1u %1u  %f\n", rc, bits[0], bits[1], fl);
+
 		if (opt_verbose)
-			printf("%1u%1u", bits[0], bits[1]);
+			fprintf(stdout, "%1u%1u", bits[0], bits[1]);
 
 		rc = write(fd_out, bits, 2);
 		if (rc < 0) {

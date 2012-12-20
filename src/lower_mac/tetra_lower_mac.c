@@ -165,7 +165,7 @@ void tp_sap_udata_ind(enum tp_sap_data_type type, const uint8_t *bits, unsigned 
 
 	if (type == TPSAP_T_SB2 && is_bnch(&tcd->time)) {
 		tup->lchan = TETRA_LC_BNCH;
-		printf("BNCH FOLLOWS\n");
+		DEBUGP("BNCH FOLLOWS\n");
 	}
 
 	DEBUGP("%s %s type5: %s\n", tbp->name, tetra_tdma_time_dump(&tcd->time),
@@ -211,14 +211,14 @@ void tp_sap_udata_ind(enum tp_sap_data_type type, const uint8_t *bits, unsigned 
 
 	if (tbp->have_crc16) {
 		uint16_t crc = crc16_ccitt_bits(type2, tbp->type1_bits+16);
-		printf("CRC COMP: 0x%04x ", crc);
+		DEBUGP("CRC COMP: 0x%04x ", crc);
 		if (crc == TETRA_CRC_OK) {
-			printf("OK\n");
+			DEBUGP("OK\n");
 			tup->crc_ok = 1;
-			printf("%s %s type1: %s\n", tbp->name, time_str,
+			DEBUGP("%s %s type1: %s\n", tbp->name, time_str,
 				osmo_ubit_dump(type2, tbp->type1_bits));
 		} else
-			printf("WRONG\n");
+			DEBUGP("WRONG\n");
 	} else if (type == TPSAP_T_BBK) {
 		/* FIXME: RM3014-decode */
 		tup->crc_ok = 1;
@@ -232,12 +232,12 @@ void tp_sap_udata_ind(enum tp_sap_data_type type, const uint8_t *bits, unsigned 
 
 	switch (type) {
 	case TPSAP_T_SB1:
-		printf("TMB-SAP SYNC CC %s(0x%02x) ", osmo_ubit_dump(type2+4, 6), bits_to_uint(type2+4, 6));
-		printf("TN %s(%u) ", osmo_ubit_dump(type2+10, 2), bits_to_uint(type2+10, 2));
-		printf("FN %s(%2u) ", osmo_ubit_dump(type2+12, 5), bits_to_uint(type2+12, 5));
-		printf("MN %s(%2u) ", osmo_ubit_dump(type2+17, 6), bits_to_uint(type2+17, 6));
-		printf("MCC %s(%u) ", osmo_ubit_dump(type2+31, 10), bits_to_uint(type2+31, 10));
-		printf("MNC %s(%u)\n", osmo_ubit_dump(type2+41, 14), bits_to_uint(type2+41, 14));
+		DEBUGP("TMB-SAP SYNC CC %s(0x%02x) ", osmo_ubit_dump(type2+4, 6), bits_to_uint(type2+4, 6));
+		DEBUGP("TN %s(%u) ", osmo_ubit_dump(type2+10, 2), bits_to_uint(type2+10, 2));
+		DEBUGP("FN %s(%2u) ", osmo_ubit_dump(type2+12, 5), bits_to_uint(type2+12, 5));
+		DEBUGP("MN %s(%2u) ", osmo_ubit_dump(type2+17, 6), bits_to_uint(type2+17, 6));
+		DEBUGP("MCC %s(%u) ", osmo_ubit_dump(type2+31, 10), bits_to_uint(type2+31, 10));
+		DEBUGP("MNC %s(%u)\n", osmo_ubit_dump(type2+41, 14), bits_to_uint(type2+41, 14));
 		/* obtain information from SYNC PDU */
 		tcd->colour_code = bits_to_uint(type2+4, 6);
 		tcd->time.tn = bits_to_uint(type2+10, 2);

@@ -6,7 +6,7 @@
 #include <osmocom/core/linuxlist.h>
 
 #ifdef DEBUG
-#define DEBUGP(x, args...)	printf(x, ## args)
+#define DEBUGP(x, args...)	fprintf(stderr, x, ## args)
 #else
 #define DEBUGP(x, args...)	do { } while(0)
 #endif

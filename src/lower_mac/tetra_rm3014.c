@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <tetra_common.h>
 #include <lower_mac/tetra_rm3014.h>
 
 /* Generator matrix from Section 8.2.3.2  */
@@ -67,7 +68,7 @@ void tetra_rm3014_init(void)
 		/* lower 16 bits from rm_30_14_gen */
 		val |= shift_bits_together(rm_30_14_gen[i], 16);
 		rm_30_14_rows[i] = val;
-		printf("rm_30_14_rows[%u] = 0x%08x\n", i, val);
+		DEBUGP("rm_30_14_rows[%u] = 0x%08x\n", i, val);
 	}
 }
 

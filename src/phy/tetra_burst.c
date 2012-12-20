@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <tetra_common.h>
 #include <phy/tetra_burst.h>
 
 #define DQPSK4_BITS_PER_SYM	2
@@ -143,7 +144,7 @@ int32_t sum_up_phase(const uint8_t *bits, unsigned int sym_count)
 		sum_phase += bits2phase[sym_in];
 	}
 
-	printf("phase sum over %u symbols: %dpi/4, mod 8 = %dpi/4, wrap = %dpi/4\n",
+	DEBUGP("phase sum over %u symbols: %dpi/4, mod 8 = %dpi/4, wrap = %dpi/4\n",
 		sym_count, sum_phase, sum_phase % 8, calc_phase_adj(sum_phase));
 	return sum_phase;
 }

@@ -289,7 +289,7 @@ static int test_one_punct(const struct punct_test_param *ptp)
 	uint8_t *type3_buf;
 	int i, j, mother_len;
 
-	printf("==> Testing Puncture/Depuncture mode %u (%u/%u)\n",
+	DEBUGP("==> Testing Puncture/Depuncture mode %u (%u/%u)\n",
 		ptp->punct, ptp->type2_len, ptp->type3_len);
 
 	mother_len = ptp->type2_len * ptp->mother_rate;
@@ -319,10 +319,10 @@ static int test_one_punct(const struct punct_test_param *ptp)
 
 	i = mother_memcmp(mother_buf, depunct_buf, mother_len);
 	if (i < 0) {
-		fprintf(stderr, "Mother buf != Depunct buf\n");
+		DEBUGP("Mother buf != Depunct buf\n");
 		return i;
 	} else if (i != ptp->type3_len) {
-		fprintf(stderr, "Depunct buf only has %u equal symbols, we need %u\n",
+		DEBUGP("Depunct buf only has %u equal symbols, we need %u\n",
 			i, ptp->type3_len);
 		return -EINVAL;
 	}

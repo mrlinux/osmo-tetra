@@ -69,11 +69,11 @@ static int tllc_defrag_in(struct tllc_state *llcs,
 	if (!dqe->last_ss ||
 	    (dqe->last_ss == lpp->ss - 1)) {
 		/* FIXME: append */
-		printf("<<APPEND:%u>> ", lpp->ss);
+		DEBUGP("<<APPEND:%u>> ", lpp->ss);
 		dqe->last_ss = lpp->ss;
 		memcpy(msgb_put(dqe->tl_sdu, len), msg->l3h, len);
 	} else
-		printf("<<MISS:%u-%u>> ", dqe->last_ss, lpp->ss);
+		DEBUGP("<<MISS:%u-%u>> ", dqe->last_ss, lpp->ss);
 
 	return 0;
 }
@@ -87,13 +87,15 @@ static int tllc_defrag_out(struct tllc_state *llcs,
 	dqe = get_dqe_for_ns(llcs, lpp->ns, 0);
 	msg = dqe->tl_sdu;
 
-	printf("<<REMOVE>> ");
+	DEBUGP("<<REMOVE>> ");
 	msg->l3h = msg->data;
 	rx_tl_sdu(msg, msgb_l3len(msg));
 
 	if (tun_fd < 0)
 		tun_fd = tun_alloc("tun0");
-		fprintf(stderr, "tun_fd=%d\n", tun_fd);
+
+	DEBUGP("tun_fd=%d\n", tun_fd);
+
 	if (tun_fd >= 0) {
 		uint8_t buf[4096];
 		int len = osmo_ubit2pbit(buf, msg->l3h+3+4+4+4+4, msgb_l3len(msg)-3-4-4-4-4);
@@ -115,7 +117,7 @@ int rx_tm_sdu(struct msgb *msg, unsigned int len)
 	tetra_llc_pdu_parse(&lpp, msg->l2h, len);
 	msg->l3h = lpp.tl_sdu;
 
-	printf("TM-SDU(%s,%u,%u): ",
+	DEBUGP("TM-SDU(%s,%u,%u): ",
 		tetra_get_llc_pdut_dec_name(lpp.pdu_type), lpp.ns, lpp.ss);
 
 	switch (lpp.pdu_type) {
