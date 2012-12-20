@@ -9,6 +9,8 @@ enum rx_state {
 	RX_S_LOCKED,		/* fully locked */
 };
 
+typedef void(*tetra_phy_rx_sync_callback_t)(enum rx_state state, void *ctx);
+
 struct tetra_rx_state {
 	enum rx_state state;
 	unsigned int bits_in_buf;		/* how many bits are currently in bitbuf */
@@ -16,9 +18,13 @@ struct tetra_rx_state {
 	unsigned int bitbuf_start_bitnum;	/* bit number at first element in bitbuf */
 	unsigned int next_frame_start_bitnum;	/* frame start expected at this bitnum */
 
-	void *burst_cb_priv;
+	void *mac_state;
+
+	void *ctx;
+	tetra_phy_rx_sync_callback_t rx_sync_cb;
 };
 
+void tetra_rx_state_init(struct tetra_rx_state *trs);
 
 /* input a raw bitstream into the tetra burst synchronizaer */
 int tetra_burst_sync_in(struct tetra_rx_state *trs, uint8_t *bits, unsigned int len);

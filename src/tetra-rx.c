@@ -40,6 +40,14 @@
 
 void *tetra_tall_ctx;
 
+void tetra_phy_rx_sync_callback(enum rx_state state, void *ctx)
+{
+	if (RX_S_LOCKED == state)
+		fprintf(stderr, "receiver synchronized\n");
+	else
+		fprintf(stderr, "receiver lost synchronization\n");
+}
+
 #ifdef HAVE_TETRA_CODEC
 void tetra_mac_traffic_cb(const uint8_t *bits, unsigned int len,
 			  uint32_t tn, uint32_t dl_usage, uint32_t ssi,
@@ -91,7 +99,10 @@ int main(int argc, char **argv)
 	tetra_mac_state_init(tms);
 
 	trs = talloc_zero(tetra_tall_ctx, struct tetra_rx_state);
-	trs->burst_cb_priv = tms;
+	tetra_rx_state_init(trs);
+
+	trs->rx_sync_cb = tetra_phy_rx_sync_callback;
+	trs->mac_state = tms;
 #ifdef HAVE_TETRA_CODEC
 	tetra_acelp_decode_init();
 
@@ -106,7 +117,7 @@ int main(int argc, char **argv)
 			perror("read");
 			exit(1);
 		} else if (len == 0) {
-			printf("EOF");
+			fprintf(stderr, "EOF");
 			break;
 		}
 		tetra_burst_sync_in(trs, buf, len);

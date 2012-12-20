@@ -50,6 +50,22 @@ static void make_bitbuf_space(struct tetra_rx_state *trs, unsigned int len)
 	}
 }
 
+static void switch_rx_state(struct tetra_rx_state *trs, enum rx_state new_state)
+{
+	if ( (trs->state == RX_S_LOCKED && new_state != RX_S_LOCKED) ||
+	     (trs->state != RX_S_LOCKED && new_state == RX_S_LOCKED) ) {
+		if (trs->rx_sync_cb)
+			trs->rx_sync_cb(new_state, trs->ctx);
+	}
+
+	trs->state = new_state;
+}
+
+void tetra_rx_state_init(struct tetra_rx_state *trs)
+{
+	memset(trs, 0, sizeof(trs));
+}
+
 /* input a raw bitstream into the tetra burst synchronizaer */
 int tetra_burst_sync_in(struct tetra_rx_state *trs, uint8_t *bits, unsigned int len)
 {
@@ -77,7 +93,7 @@ int tetra_burst_sync_in(struct tetra_rx_state *trs, uint8_t *bits, unsigned int 
 		if (rc < 0)
 			return rc;
 		printf("found SYNC training sequence in bit #%u\n", train_seq_offs);
-		trs->state = RX_S_KNOW_FSTART;
+		switch_rx_state(trs, RX_S_KNOW_FSTART);
 		trs->next_frame_start_bitnum = trs->bitbuf_start_bitnum + train_seq_offs + 296;
 #if 0
 		if (train_seq_offs < 214) {
@@ -102,7 +118,7 @@ int tetra_burst_sync_in(struct tetra_rx_state *trs, uint8_t *bits, unsigned int 
 			trs->bitbuf_start_bitnum += offset;
 
 			trs->next_frame_start_bitnum += TETRA_BITS_PER_TS;
-			trs->state = RX_S_LOCKED;
+			switch_rx_state(trs, RX_S_LOCKED);
 		}
 	case RX_S_LOCKED:
 		if (trs->bits_in_buf < TETRA_BITS_PER_TS) {
@@ -121,23 +137,23 @@ int tetra_burst_sync_in(struct tetra_rx_state *trs, uint8_t *bits, unsigned int 
 			switch (rc) {
 			case TETRA_TRAIN_SYNC:
 				if (train_seq_offs == 214)
-					tetra_burst_rx_cb(trs->bitbuf, TETRA_BITS_PER_TS, rc, trs->burst_cb_priv);
+					tetra_burst_rx_cb(trs->bitbuf, TETRA_BITS_PER_TS, rc, trs->mac_state);
 				else {
 					fprintf(stderr, "#### SYNC burst at offset %u?!?\n", train_seq_offs);
-					trs->state = RX_S_UNLOCKED;
+					switch_rx_state(trs, RX_S_UNLOCKED);
 				}
 				break;
 			case TETRA_TRAIN_NORM_1:
 			case TETRA_TRAIN_NORM_2:
 			case TETRA_TRAIN_NORM_3:
 				if (train_seq_offs == 244)
-					tetra_burst_rx_cb(trs->bitbuf, TETRA_BITS_PER_TS, rc, trs->burst_cb_priv);
+					tetra_burst_rx_cb(trs->bitbuf, TETRA_BITS_PER_TS, rc, trs->mac_state);
 				else
 					fprintf(stderr, "#### SYNC burst at offset %u?!?\n", train_seq_offs);
 				break;
 			default:
 				fprintf(stderr, "#### could not find successive burst training sequence\n");
-				trs->state = RX_S_UNLOCKED;
+				switch_rx_state(trs, RX_S_UNLOCKED);
 				break;
 			}
 

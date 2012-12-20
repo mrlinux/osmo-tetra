@@ -127,8 +127,7 @@ const char *tetra_get_sap_name(uint8_t sap)
 
 void tetra_mac_state_init(struct tetra_mac_state *tms)
 {
-	INIT_LLIST_HEAD(&tms->voice_channels);
+	memset(tms, 0, sizeof(struct tetra_mac_state));
 
-	tms->ctx = NULL;
-	tms->traffic_cb = NULL;
+	INIT_LLIST_HEAD(&tms->voice_channels);
 }

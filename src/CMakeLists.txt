@@ -57,12 +57,7 @@ add_library(osmotetra SHARED
 
 set_target_properties(osmotetra-mac PROPERTIES COMPILE_FLAGS "-fPIC")
 
-target_link_libraries(osmotetra osmotetra-phy osmotetra-mac)
-
-target_link_libraries(osmotetra ${LIBOSMOCORE_LIBRARIES})
-if(LIBTETRACODEC_FOUND)
-    target_link_libraries(osmotetra ${LIBTETRACODEC_LIBRARIES})
-endif()
+target_link_libraries(osmotetra osmotetra-phy osmotetra-mac ${LIBOSMOCORE_LIBRARIES})
 
 set_target_properties(osmotetra PROPERTIES DEFINE_SYMBOL "osmotetra_EXPORTS")
 set_target_properties(osmotetra PROPERTIES OUTPUT_NAME osmotetra)
@@ -81,6 +76,9 @@ add_executable(float_to_bits float_to_bits.c)
 
 add_executable(tetra-rx tetra-rx.c)
 target_link_libraries(tetra-rx osmotetra)
+if(LIBTETRACODEC_FOUND)
+    target_link_libraries(tetra-rx ${LIBTETRACODEC_LIBRARIES})
+endif()
 
 set(INSTALL_TARGETS osmotetra float_to_bits tetra-rx)
 
