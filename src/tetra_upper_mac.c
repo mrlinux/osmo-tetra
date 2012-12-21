@@ -72,6 +72,9 @@ static void rx_bcast(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms
 			sid.mle_si.bs_service_details & (1 << i) ? 1 : 0);
 
 	memcpy(&tms->last_sid, &sid, sizeof(sid));
+
+	if (tms->sys_info_cb)
+		tms->sys_info_cb(&tms->last_sid, tms->ctx);
 }
 
 const char *tetra_alloc_dump(const struct tetra_chan_alloc_decoded *cad, struct tetra_mac_state *tms)

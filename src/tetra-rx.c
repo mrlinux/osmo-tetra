@@ -40,12 +40,63 @@
 
 void *tetra_tall_ctx;
 
-void tetra_phy_rx_sync_callback(enum rx_state state, void *ctx)
+void tetra_phy_rx_sync_cb(enum rx_state state, void *ctx)
 {
 	if (RX_S_LOCKED == state)
-		fprintf(stderr, "receiver synchronized\n");
+		fprintf(stderr, "receiver synchronized.\n");
 	else
-		fprintf(stderr, "receiver lost synchronization\n");
+		fprintf(stderr, "receiver lost synchro.\n");
+}
+
+static struct sys_info_entry {
+	struct llist_head list;
+	struct tetra_si_decoded *si;
+} g_si_list;
+
+void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
+{
+	int i;
+	uint32_t dl_freq, ul_freq;
+	struct sys_info_entry *entry;
+
+	llist_for_each_entry(entry, &g_si_list.list, list) {
+		if ( !memcmp(entry->si, si, sizeof(struct tetra_si_decoded)) ) {
+			entry = NULL;
+			break;
+		}
+	}
+
+	if (entry) {
+		entry = talloc_zero(tetra_tall_ctx, struct sys_info_entry);
+		entry->si = talloc_zero(tetra_tall_ctx, struct tetra_si_decoded);
+		memcpy(entry->si, si, sizeof(struct tetra_si_decoded));
+		llist_add(&entry->list, &g_si_list.list);
+	} else
+		return;
+
+	dl_freq = tetra_dl_carrier_hz(si->freq_band,
+				      si->main_carrier,
+				      si->freq_offset);
+
+	ul_freq = tetra_ul_carrier_hz(si->freq_band,
+				      si->main_carrier,
+				      si->freq_offset,
+				      si->duplex_spacing,
+				      si->reverse_operation);
+
+	fprintf(stderr, "sysinfo (DL %u Hz, UL %u Hz), serv_det 0x%04x",
+		dl_freq, ul_freq, si->mle_si.bs_service_details);
+
+	fprintf(stderr, " %s: %u",
+		tetra_get_bs_serv_det_name(BS_SERVDET_AIR_ENCR),
+		si->mle_si.bs_service_details & BS_SERVDET_AIR_ENCR ? 1 : 0);
+
+	if (si->cck_valid_no_hf)
+		fprintf(stderr, " CCK ID %u", si->cck_id);
+	else
+		fprintf(stderr, " Hyperframe %u", si->hyperframe_number);
+
+	fprintf(stderr, "\n");
 }
 
 #ifdef HAVE_TETRA_CODEC
@@ -82,6 +133,8 @@ int main(int argc, char **argv)
 	struct tetra_rx_state *trs;
 	struct tetra_mac_state *tms;
 
+	INIT_LLIST_HEAD(&g_si_list.list);
+
 	if (argc < 2) {
 		fprintf(stderr, "Usage: %s <file_with_1_byte_per_bit>\n", argv[0]);
 		exit(1);
@@ -98,10 +151,12 @@ int main(int argc, char **argv)
 	tms = talloc_zero(tetra_tall_ctx, struct tetra_mac_state);
 	tetra_mac_state_init(tms);
 
+	tms->sys_info_cb = tetra_mac_sys_info_cb;
+
 	trs = talloc_zero(tetra_tall_ctx, struct tetra_rx_state);
 	tetra_rx_state_init(trs);
 
-	trs->rx_sync_cb = tetra_phy_rx_sync_callback;
+	trs->rx_sync_cb = tetra_phy_rx_sync_cb;
 	trs->mac_state = tms;
 #ifdef HAVE_TETRA_CODEC
 	tetra_acelp_decode_init();

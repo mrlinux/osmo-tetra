@@ -9,7 +9,7 @@ enum rx_state {
 	RX_S_LOCKED,		/* fully locked */
 };
 
-typedef void(*tetra_phy_rx_sync_callback_t)(enum rx_state state, void *ctx);
+typedef void(*tetra_phy_rx_sync_cb_t)(enum rx_state state, void *ctx);
 
 struct tetra_rx_state {
 	enum rx_state state;
@@ -21,7 +21,7 @@ struct tetra_rx_state {
 	void *mac_state;
 
 	void *ctx;
-	tetra_phy_rx_sync_callback_t rx_sync_cb;
+	tetra_phy_rx_sync_cb_t rx_sync_cb;
 };
 
 void tetra_rx_state_init(struct tetra_rx_state *trs);
