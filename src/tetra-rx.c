@@ -48,31 +48,10 @@ static void tetra_phy_rx_sync_cb(enum rx_state state, void *ctx)
 		fprintf(stderr, "receiver lost synchro.\n");
 }
 
-static struct sys_info_entry {
-	struct llist_head list;
-	struct tetra_si_decoded *si;
-} g_si_list;
-
 static void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
 {
 	uint32_t dl_freq, ul_freq;
-	struct sys_info_entry *entry;
-#if 0
-	llist_for_each_entry(entry, &g_si_list.list, list) {
-		if ( !memcmp(entry->si, si, sizeof(struct tetra_si_decoded)) ) {
-			entry = NULL;
-			break;
-		}
-	}
 
-	if (entry) {
-		entry = talloc_zero(tetra_tall_ctx, struct sys_info_entry);
-		entry->si = talloc_zero(tetra_tall_ctx, struct tetra_si_decoded);
-		memcpy(entry->si, si, sizeof(struct tetra_si_decoded));
-		llist_add(&entry->list, &g_si_list.list);
-	} else
-		return;
-#endif
 	dl_freq = tetra_dl_carrier_hz(si->freq_band,
 				      si->main_carrier,
 				      si->freq_offset);
@@ -97,30 +76,8 @@ static void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
 	fprintf(stderr, "\n");
 }
 
-static struct cell_data_entry {
-	struct llist_head list;
-	struct tetra_cell_data *cd;
-} g_cd_list;
-
 static void tetra_mac_cell_data_cb(struct tetra_cell_data *cd, void *ctx)
 {
-	struct cell_data_entry *entry = &g_cd_list;
-#if 0
-	llist_for_each_entry(entry, &g_cd_list.list, list) {
-		if ( !memcmp(entry->cd, cd, sizeof(struct tetra_cell_data)) ) {
-			entry = NULL;
-			break;
-		}
-	}
-
-	if (entry) {
-		entry = talloc_zero(tetra_tall_ctx, struct cell_data_entry);
-		entry->cd = talloc_zero(tetra_tall_ctx, struct tetra_cell_data);
-		memcpy(entry->cd, cd, sizeof(struct tetra_cell_data));
-		llist_add(&entry->list, &g_cd_list.list);
-	} else
-		return;
-#endif
 	fprintf(stderr, "sync MNC %u MNC %u CC 0x%02x\n",
 		cd->mcc, cd->mnc, cd->colour_code);
 }
@@ -159,8 +116,6 @@ int main(int argc, char **argv)
 	struct tetra_rx_state *trs;
 	struct tetra_phy_state *tps;
 	struct tetra_mac_state *tms;
-
-	INIT_LLIST_HEAD(&g_si_list.list);
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: %s <file_with_1_byte_per_bit>\n", argv[0]);
