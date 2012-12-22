@@ -40,7 +40,7 @@
 
 void *tetra_tall_ctx;
 
-static void tetra_phy_rx_sync_cb(enum rx_state state, void *ctx)
+static void tetra_phy_rx_sync_cb(void *ctx, enum rx_state state)
 {
 	if (RX_S_LOCKED == state)
 		fprintf(stderr, "receiver synchronized.\n");
@@ -48,7 +48,7 @@ static void tetra_phy_rx_sync_cb(enum rx_state state, void *ctx)
 		fprintf(stderr, "receiver lost synchro.\n");
 }
 
-static void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
+static void tetra_mac_sys_info_cb(void *ctx, struct tetra_si_decoded *si)
 {
 	uint32_t dl_freq, ul_freq;
 
@@ -76,16 +76,16 @@ static void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
 	fprintf(stderr, "\n");
 }
 
-static void tetra_mac_cell_data_cb(struct tetra_cell_data *cd, void *ctx)
+static void tetra_mac_cell_data_cb(void *ctx, struct tetra_cell_data *cd)
 {
 	fprintf(stderr, "sync MNC %u MNC %u CC 0x%02x\n",
 		cd->mcc, cd->mnc, cd->colour_code);
 }
 
 #ifdef HAVE_TETRA_CODEC
-static void tetra_mac_traffic_cb(const uint8_t *bits, unsigned int len,
-			  uint32_t tn, uint32_t dl_usage, uint32_t ssi,
-			  void *ctx)
+static void tetra_mac_traffic_cb(void *ctx,
+				 const uint8_t *bits, unsigned int len,
+				 uint32_t tn, uint32_t dl_usage, uint32_t ssi )
 {
 	char fname[100];
 	int16_t block[432];

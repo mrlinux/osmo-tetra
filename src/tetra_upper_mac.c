@@ -74,7 +74,7 @@ static void rx_bcast(struct tetra_tmvsap_prim *tmvp, struct tetra_mac_state *tms
 	memcpy(&tms->last_sid, &sid, sizeof(sid));
 
 	if (tms->sys_info_cb)
-		tms->sys_info_cb(&tms->last_sid, tms->ctx);
+		tms->sys_info_cb(tms->ctx, &tms->last_sid);
 }
 
 const char *tetra_alloc_dump(const struct tetra_chan_alloc_decoded *cad, struct tetra_mac_state *tms)

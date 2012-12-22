@@ -179,9 +179,9 @@ void tp_sap_udata_ind(enum tp_sap_data_type type, const uint8_t *bits, unsigned 
 	if ((type == TPSAP_T_SCH_F) && (tms->cur_burst.dl_usage))
 	{
 		if (tms->traffic_cb) {
-			tms->traffic_cb(type4, 432, tcd->time.tn,
+			tms->traffic_cb(tms->ctx, type4, 432, tcd->time.tn,
 					tms->cur_burst.dl_usage,
-					tms->cur_burst.ssi, tms->ctx);
+					tms->cur_burst.ssi);
 		}
 	}
 
@@ -243,7 +243,7 @@ void tp_sap_udata_ind(enum tp_sap_data_type type, const uint8_t *bits, unsigned 
 		tup->lchan = TETRA_LC_BSCH;
 
 		if (tms->cell_data_cb)
-			tms->cell_data_cb(tcd, tms->ctx);
+			tms->cell_data_cb(tms->ctx, tcd);
 		break;
 	case TPSAP_T_SB2:
 	case TPSAP_T_NDB:

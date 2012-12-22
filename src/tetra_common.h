@@ -44,7 +44,7 @@ enum rx_state {
 	RX_S_LOCKED,		/* fully locked */
 };
 
-typedef void(*tetra_phy_rx_sync_cb_t)(enum rx_state state, void *ctx);
+typedef void(*tetra_phy_rx_sync_cb_t)(void *ctx, enum rx_state state);
 
 struct tetra_phy_state {
 	struct tetra_tdma_time time;
@@ -56,18 +56,13 @@ extern struct tetra_phy_state t_phy_state;
 
 void tetra_phy_state_init(struct tetra_phy_state *tps);
 
-typedef void(*tetra_mac_sys_info_cb_t)(struct tetra_si_decoded *si,
-				       void *ctx);
+typedef void(*tetra_mac_sys_info_cb_t)(void *ctx, struct tetra_si_decoded *si);
 
-typedef void(*tetra_mac_cell_data_cb_t)(struct tetra_cell_data *cd,
-					void *ctx);
+typedef void(*tetra_mac_cell_data_cb_t)(void *ctx, struct tetra_cell_data *cd );
 
-typedef void(*tetra_mac_traffic_cb_t)(const uint8_t *bits,
-				      unsigned int len,
-				      uint32_t tn,
-				      uint32_t dl_usage,
-				      uint32_t ssi,
-				      void *ctx);
+typedef void(*tetra_mac_traffic_cb_t)(void *ctx,
+				      const uint8_t *bits, unsigned int len,
+				      uint32_t tn, uint32_t dl_usage, uint32_t ssi);
 
 struct tetra_mac_state {
 	struct llist_head voice_channels;

@@ -57,7 +57,7 @@ static void switch_rx_state(struct tetra_rx_state *trs, enum rx_state new_state)
 	if ( (trs->state == RX_S_LOCKED && new_state != RX_S_LOCKED) ||
 	     (trs->state != RX_S_LOCKED && new_state == RX_S_LOCKED) ) {
 		if (tps->rx_sync_cb)
-			tps->rx_sync_cb(new_state, tps->ctx);
+			tps->rx_sync_cb(tps->ctx, new_state);
 	}
 
 	trs->state = new_state;
