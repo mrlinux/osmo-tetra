@@ -58,7 +58,7 @@ void tetra_phy_state_init(struct tetra_phy_state *tps);
 
 typedef void(*tetra_mac_sys_info_cb_t)(void *ctx, struct tetra_si_decoded *si);
 
-typedef void(*tetra_mac_cell_data_cb_t)(void *ctx, struct tetra_cell_data *cd );
+typedef void(*tetra_mac_cell_data_cb_t)(void *ctx, struct tetra_cell_data *cd);
 
 typedef void(*tetra_mac_traffic_cb_t)(void *ctx,
 				      const uint8_t *bits, unsigned int len,

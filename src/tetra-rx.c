@@ -165,6 +165,7 @@ int main(int argc, char **argv)
 		tetra_burst_sync_in(trs, buf, len);
 	}
 
+	close(fd);
 	talloc_free(trs);
 	talloc_free(tps);
 	talloc_free(tms);
