@@ -52,10 +52,12 @@ static void make_bitbuf_space(struct tetra_rx_state *trs, unsigned int len)
 
 static void switch_rx_state(struct tetra_rx_state *trs, enum rx_state new_state)
 {
+	struct tetra_phy_state *tps = trs->phy_state;
+
 	if ( (trs->state == RX_S_LOCKED && new_state != RX_S_LOCKED) ||
 	     (trs->state != RX_S_LOCKED && new_state == RX_S_LOCKED) ) {
-		if (trs->rx_sync_cb)
-			trs->rx_sync_cb(new_state, trs->ctx);
+		if (tps->rx_sync_cb)
+			tps->rx_sync_cb(new_state, tps->ctx);
 	}
 
 	trs->state = new_state;

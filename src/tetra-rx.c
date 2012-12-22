@@ -133,6 +133,8 @@ int main(int argc, char **argv)
 	tps = talloc_zero(tetra_tall_ctx, struct tetra_phy_state);
 	tetra_phy_state_init(tps);
 
+	tps->rx_sync_cb = tetra_phy_rx_sync_cb;
+
 	tms = talloc_zero(tetra_tall_ctx, struct tetra_mac_state);
 	tetra_mac_state_init(tms);
 
@@ -147,7 +149,6 @@ int main(int argc, char **argv)
 
 	trs->phy_state = tps;
 	trs->mac_state = tms;
-	trs->rx_sync_cb = tetra_phy_rx_sync_cb;
 
 	while (1) {
 		uint8_t buf[64];

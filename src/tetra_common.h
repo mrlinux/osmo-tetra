@@ -38,8 +38,19 @@ uint32_t bits_to_uint(const uint8_t *bits, unsigned int len);
 
 #include "tetra_tdma.h"
 
+enum rx_state {
+	RX_S_UNLOCKED,		/* we're completely unlocked */
+	RX_S_KNOW_FSTART,	/* we know the next frame start */
+	RX_S_LOCKED,		/* fully locked */
+};
+
+typedef void(*tetra_phy_rx_sync_cb_t)(enum rx_state state, void *ctx);
+
 struct tetra_phy_state {
 	struct tetra_tdma_time time;
+
+	void *ctx;
+	tetra_phy_rx_sync_cb_t rx_sync_cb;
 };
 extern struct tetra_phy_state t_phy_state;
 
