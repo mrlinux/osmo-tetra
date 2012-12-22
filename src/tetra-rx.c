@@ -166,6 +166,7 @@ int main(int argc, char **argv)
 	}
 
 	talloc_free(trs);
+	talloc_free(tps);
 	talloc_free(tms);
 
 	exit(0);
