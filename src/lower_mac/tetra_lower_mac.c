@@ -98,15 +98,6 @@ static const struct tetra_blk_param tetra_blk_param[] = {
 	},
 };
 
-struct tetra_cell_data {
-	uint16_t mcc;
-	uint16_t mnc;
-	uint8_t colour_code;
-	struct tetra_tdma_time time;
-
-	uint32_t scramb_init;
-};
-
 static struct tetra_cell_data _tcd, *tcd = &_tcd;
 
 int is_bsch(struct tetra_tdma_time *tm)
@@ -250,6 +241,9 @@ void tp_sap_udata_ind(enum tp_sap_data_type type, const uint8_t *bits, unsigned 
 		/* update the PHY layer time */
 		memcpy(&t_phy_state.time, &tcd->time, sizeof(t_phy_state.time));
 		tup->lchan = TETRA_LC_BSCH;
+
+		if (tms->cell_data_cb)
+			tms->cell_data_cb(tcd, tms->ctx);
 		break;
 	case TPSAP_T_SB2:
 	case TPSAP_T_NDB:

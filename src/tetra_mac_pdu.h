@@ -189,6 +189,17 @@ struct tetra_chan_alloc_decoded {
 	} aug;
 };
 
+#include "tetra_tdma.h"
+
+struct tetra_cell_data {
+	uint16_t mcc;
+	uint16_t mnc;
+	uint8_t colour_code;
+	struct tetra_tdma_time time;
+
+	uint32_t scramb_init;
+};
+
 struct tetra_addr {
 	uint8_t type;
 	uint16_t mcc;

@@ -18,6 +18,7 @@ struct tetra_rx_state {
 	unsigned int bitbuf_start_bitnum;	/* bit number at first element in bitbuf */
 	unsigned int next_frame_start_bitnum;	/* frame start expected at this bitnum */
 
+	void *phy_state;
 	void *mac_state;
 
 	void *ctx;

@@ -40,7 +40,7 @@
 
 void *tetra_tall_ctx;
 
-void tetra_phy_rx_sync_cb(enum rx_state state, void *ctx)
+static void tetra_phy_rx_sync_cb(enum rx_state state, void *ctx)
 {
 	if (RX_S_LOCKED == state)
 		fprintf(stderr, "receiver synchronized.\n");
@@ -53,12 +53,11 @@ static struct sys_info_entry {
 	struct tetra_si_decoded *si;
 } g_si_list;
 
-void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
+static void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
 {
-	int i;
 	uint32_t dl_freq, ul_freq;
 	struct sys_info_entry *entry;
-
+#if 0
 	llist_for_each_entry(entry, &g_si_list.list, list) {
 		if ( !memcmp(entry->si, si, sizeof(struct tetra_si_decoded)) ) {
 			entry = NULL;
@@ -73,7 +72,7 @@ void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
 		llist_add(&entry->list, &g_si_list.list);
 	} else
 		return;
-
+#endif
 	dl_freq = tetra_dl_carrier_hz(si->freq_band,
 				      si->main_carrier,
 				      si->freq_offset);
@@ -87,20 +86,47 @@ void tetra_mac_sys_info_cb(struct tetra_si_decoded *si, void *ctx)
 	fprintf(stderr, "sysinfo (DL %u Hz, UL %u Hz), serv_det 0x%04x",
 		dl_freq, ul_freq, si->mle_si.bs_service_details);
 
-	fprintf(stderr, " %s: %u",
-		tetra_get_bs_serv_det_name(BS_SERVDET_AIR_ENCR),
-		si->mle_si.bs_service_details & BS_SERVDET_AIR_ENCR ? 1 : 0);
+	fprintf(stderr, " air_encr %s",
+		si->mle_si.bs_service_details & BS_SERVDET_AIR_ENCR ? "yes" : "no");
 
 	if (si->cck_valid_no_hf)
-		fprintf(stderr, " CCK ID %u", si->cck_id);
+		fprintf(stderr, " cck id %u", si->cck_id);
 	else
-		fprintf(stderr, " Hyperframe %u", si->hyperframe_number);
+		fprintf(stderr, " hframe %u", si->hyperframe_number);
 
 	fprintf(stderr, "\n");
 }
 
+static struct cell_data_entry {
+	struct llist_head list;
+	struct tetra_cell_data *cd;
+} g_cd_list;
+
+static void tetra_mac_cell_data_cb(struct tetra_cell_data *cd, void *ctx)
+{
+	struct cell_data_entry *entry = &g_cd_list;
+#if 0
+	llist_for_each_entry(entry, &g_cd_list.list, list) {
+		if ( !memcmp(entry->cd, cd, sizeof(struct tetra_cell_data)) ) {
+			entry = NULL;
+			break;
+		}
+	}
+
+	if (entry) {
+		entry = talloc_zero(tetra_tall_ctx, struct cell_data_entry);
+		entry->cd = talloc_zero(tetra_tall_ctx, struct tetra_cell_data);
+		memcpy(entry->cd, cd, sizeof(struct tetra_cell_data));
+		llist_add(&entry->list, &g_cd_list.list);
+	} else
+		return;
+#endif
+	fprintf(stderr, "sync MNC %u MNC %u CC 0x%02x\n",
+		cd->mcc, cd->mnc, cd->colour_code);
+}
+
 #ifdef HAVE_TETRA_CODEC
-void tetra_mac_traffic_cb(const uint8_t *bits, unsigned int len,
+static void tetra_mac_traffic_cb(const uint8_t *bits, unsigned int len,
 			  uint32_t tn, uint32_t dl_usage, uint32_t ssi,
 			  void *ctx)
 {
@@ -131,6 +157,7 @@ int main(int argc, char **argv)
 {
 	int fd;
 	struct tetra_rx_state *trs;
+	struct tetra_phy_state *tps;
 	struct tetra_mac_state *tms;
 
 	INIT_LLIST_HEAD(&g_si_list.list);
@@ -148,21 +175,25 @@ int main(int argc, char **argv)
 
 	tetra_gsmtap_init("localhost", 0);
 
+	tps = talloc_zero(tetra_tall_ctx, struct tetra_phy_state);
+	tetra_phy_state_init(tps);
+
 	tms = talloc_zero(tetra_tall_ctx, struct tetra_mac_state);
 	tetra_mac_state_init(tms);
 
 	tms->sys_info_cb = tetra_mac_sys_info_cb;
-
+	tms->cell_data_cb = tetra_mac_cell_data_cb;
+#ifdef HAVE_TETRA_CODEC
+	tetra_acelp_decode_init();
+	tms->traffic_cb = tetra_mac_traffic_cb;
+#endif
 	trs = talloc_zero(tetra_tall_ctx, struct tetra_rx_state);
 	tetra_rx_state_init(trs);
 
-	trs->rx_sync_cb = tetra_phy_rx_sync_cb;
+	trs->phy_state = tps;
 	trs->mac_state = tms;
-#ifdef HAVE_TETRA_CODEC
-	tetra_acelp_decode_init();
+	trs->rx_sync_cb = tetra_phy_rx_sync_cb;
 
-	tms->traffic_cb = tetra_mac_traffic_cb;
-#endif
 	while (1) {
 		uint8_t buf[64];
 		int len;

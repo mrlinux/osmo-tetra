@@ -37,13 +37,19 @@ enum tetra_log_chan {
 uint32_t bits_to_uint(const uint8_t *bits, unsigned int len);
 
 #include "tetra_tdma.h"
+
 struct tetra_phy_state {
 	struct tetra_tdma_time time;
 };
 extern struct tetra_phy_state t_phy_state;
 
+void tetra_phy_state_init(struct tetra_phy_state *tps);
+
 typedef void(*tetra_mac_sys_info_cb_t)(struct tetra_si_decoded *si,
 				       void *ctx);
+
+typedef void(*tetra_mac_cell_data_cb_t)(struct tetra_cell_data *cd,
+					void *ctx);
 
 typedef void(*tetra_mac_traffic_cb_t)(const uint8_t *bits,
 				      unsigned int len,
@@ -62,6 +68,7 @@ struct tetra_mac_state {
 
 	void *ctx;
 	tetra_mac_sys_info_cb_t sys_info_cb;
+	tetra_mac_cell_data_cb_t cell_data_cb;
 	tetra_mac_traffic_cb_t traffic_cb;
 };
 

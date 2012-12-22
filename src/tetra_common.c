@@ -125,6 +125,11 @@ const char *tetra_get_sap_name(uint8_t sap)
 	return get_value_string(tetra_sap_names, sap);
 }
 
+void tetra_phy_state_init(struct tetra_phy_state *tps)
+{
+	memset(tps, 0, sizeof(struct tetra_phy_state));
+}
+
 void tetra_mac_state_init(struct tetra_mac_state *tms)
 {
 	memset(tms, 0, sizeof(struct tetra_mac_state));
