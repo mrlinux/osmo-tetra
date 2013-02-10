@@ -40,17 +40,31 @@
 
 void *tetra_tall_ctx;
 
+static int got_sys_info = 0;
+static int got_cell_data = 0;
+
 static void tetra_phy_rx_sync_cb(void *ctx, enum rx_state state)
 {
+#if 0
 	if (RX_S_LOCKED == state)
 		fprintf(stderr, "receiver synchronized.\n");
 	else
 		fprintf(stderr, "receiver lost synchro.\n");
+#endif
+	if (RX_S_LOCKED != state) {
+		got_sys_info = 0;
+		got_cell_data = 0;
+	}
 }
 
 static void tetra_mac_sys_info_cb(void *ctx, struct tetra_si_decoded *si)
 {
 	uint32_t dl_freq, ul_freq;
+
+	if (!got_sys_info)
+		got_sys_info = 1;
+	else
+		return;
 
 	dl_freq = tetra_dl_carrier_hz(si->freq_band,
 				      si->main_carrier,
@@ -78,7 +92,12 @@ static void tetra_mac_sys_info_cb(void *ctx, struct tetra_si_decoded *si)
 
 static void tetra_mac_cell_data_cb(void *ctx, struct tetra_cell_data *cd)
 {
-	fprintf(stderr, "sync MNC %u MNC %u CC 0x%02x\n",
+	if (!got_cell_data)
+		got_cell_data = 1;
+	else
+		return;
+
+	fprintf(stderr, "sync MCC %u MNC %u CC 0x%02x\n",
 		cd->mcc, cd->mnc, cd->colour_code);
 }
 
